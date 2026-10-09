@@ -30,6 +30,9 @@ class GameEngine:
         self.timer=0
         self.spawn_interval=60
         self.score=0
+        self.frames=0
+        self.streak=0
+        self.multiplier=1
         self.game_over=False
         self.started=False
 
@@ -74,12 +77,17 @@ class GameEngine:
             if m.collides(self.ship.rect):
                 if self.ship.shield:
                     self.ship.shield=False  # shield absorbs exactly one collision
+                    self.streak=0  # taking a hit (even absorbed) resets the multiplier
                     self.meteors.remove(m)
                 else:
                     self.game_over=True
         self.update_lasers()
         self.meteors=[m for m in self.meteors if not m.off_screen(HEIGHT)]
-        self.score+=1
+        # Task 4: +1 multiplier for every 10s (600 frames) survived without a hit
+        self.frames+=1
+        self.streak+=1
+        self.multiplier=1+self.streak//600
+        self.score+=self.multiplier
 
     def on_meteor_destroyed(self,m):
         self.meteors.extend(m.split())  # Task 2: large -> fragments, small -> gone
@@ -103,19 +111,32 @@ class GameEngine:
         for l in self.lasers: l.draw(self.screen)
         for m in self.meteors: m.draw(self.screen)
         self.ship.draw(self.screen)
-        sc=self.font.render(f"Time: {self.score//60}s",True,(200,200,240))
+        sc=self.font.render(f"Time: {self.frames//60}s",True,(200,200,240))
         self.screen.blit(sc,(10,10))
+        pts=self.font.render(f"Score: {self.score//6}",True,(200,200,240))
+        self.screen.blit(pts,(10,40))
+        mcol=(255,220,80) if self.multiplier>1 else (160,160,200)
+        mul=self.font.render(f"x{self.multiplier}",True,mcol)
+        self.screen.blit(mul,(WIDTH-mul.get_width()-10,10))
+        if self.started and not self.game_over:
+            left=(600-self.streak%600)//60+1
+            nxt=self.font.render(f"next x{self.multiplier+1} in {left}s",True,(120,120,160))
+            self.screen.blit(nxt,(WIDTH-nxt.get_width()-10,40))
         if not self.started:
             msg=self.font.render("Press SPACE to launch",True,(180,180,240))
             self.screen.blit(msg,(WIDTH//2-msg.get_width()//2,HEIGHT//2))
+            hint=self.font.render("WASD/Arrows move | SPACE shoots",True,(120,120,170))
+            self.screen.blit(hint,(WIDTH//2-hint.get_width()//2,HEIGHT//2+40))
         if self.game_over:
             ov=pygame.Surface((WIDTH,HEIGHT),pygame.SRCALPHA)
             ov.fill((0,0,0,150))
             self.screen.blit(ov,(0,0))
             m=self.big_font.render("DESTROYED!",True,(220,80,60))
-            s=self.font.render(f"Survived {self.score//60}s | SPACE to Restart",True,(200,200,200))
-            self.screen.blit(m,(WIDTH//2-m.get_width()//2,HEIGHT//2-40))
-            self.screen.blit(s,(WIDTH//2-s.get_width()//2,HEIGHT//2+20))
+            s=self.font.render(f"Survived {self.frames//60}s | Score {self.score//6}",True,(200,200,200))
+            r=self.font.render("SPACE to Restart",True,(200,200,200))
+            self.screen.blit(m,(WIDTH//2-m.get_width()//2,HEIGHT//2-60))
+            self.screen.blit(s,(WIDTH//2-s.get_width()//2,HEIGHT//2))
+            self.screen.blit(r,(WIDTH//2-r.get_width()//2,HEIGHT//2+40))
         pygame.display.flip()
 
     def run(self):
