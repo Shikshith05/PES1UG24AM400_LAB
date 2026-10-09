@@ -3,6 +3,7 @@ import random
 from game.ship import Ship
 from game.meteor import Meteor
 from game.laser import Laser
+from game.powerup import ShieldOrb
 
 WIDTH,HEIGHT=700,520
 FPS=60
@@ -24,6 +25,8 @@ class GameEngine:
         self.meteors=[]
         self.lasers=[]
         self.fire_cd=0
+        self.orbs=[]
+        self.orb_timer=random.randint(420,720)
         self.timer=0
         self.spawn_interval=60
         self.score=0
@@ -55,16 +58,31 @@ class GameEngine:
             self.meteors.append(Meteor(WIDTH))
             self.timer=0
             self.spawn_interval=max(20,self.spawn_interval-0.3)
-        for m in self.meteors:
+        # Task 3: shield orbs spawn every ~7-12s and drift down
+        self.orb_timer-=1
+        if self.orb_timer<=0:
+            self.orbs.append(ShieldOrb(WIDTH))
+            self.orb_timer=random.randint(420,720)
+        for o in self.orbs[:]:
+            o.update()
+            if o.collides(self.ship.rect):
+                self.ship.shield=True
+                self.orbs.remove(o)
+        self.orbs=[o for o in self.orbs if not o.off_screen(HEIGHT)]
+        for m in self.meteors[:]:
             m.update()
             if m.collides(self.ship.rect):
-                self.game_over=True
+                if self.ship.shield:
+                    self.ship.shield=False  # shield absorbs exactly one collision
+                    self.meteors.remove(m)
+                else:
+                    self.game_over=True
         self.update_lasers()
         self.meteors=[m for m in self.meteors if not m.off_screen(HEIGHT)]
         self.score+=1
-        
+
     def on_meteor_destroyed(self,m):
-        self.meteors.extend(m.split())
+        self.meteors.extend(m.split())  # Task 2: large -> fragments, small -> gone
 
     def update_lasers(self):
         for l in self.lasers: l.update()
@@ -81,6 +99,7 @@ class GameEngine:
         self.screen.fill(BG)
         for sx,sy,sr in self.stars:
             pygame.draw.circle(self.screen,(200,200,220),(sx,sy),sr)
+        for o in self.orbs: o.draw(self.screen)
         for l in self.lasers: l.draw(self.screen)
         for m in self.meteors: m.draw(self.screen)
         self.ship.draw(self.screen)

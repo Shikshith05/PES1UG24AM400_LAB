@@ -7,6 +7,7 @@ class Ship:
         self.rect = pygame.Rect(x-20, y-20, 40, 40)
         self.color = (80, 160, 240)
         self.trail = []
+        self.shield = False
 
     def move(self, keys, width, height):
         dx=dy=0
@@ -30,5 +31,11 @@ class Ship:
         cx,cy=self.rect.center
         pts=[(cx,cy-18),(cx-14,cy+14),(cx,cy+6),(cx+14,cy+14)]
         pygame.draw.polygon(screen,self.color,pts)
+        # shield barrier
+        if self.shield:
+            bubble=pygame.Surface((70,70),pygame.SRCALPHA)
+            pygame.draw.circle(bubble,(80,220,255,50),(35,35),32)
+            pygame.draw.circle(bubble,(140,240,255,220),(35,35),32,3)
+            screen.blit(bubble,(cx-35,cy-35))
         # engine glow
         pygame.draw.circle(screen,(255,180,60),(cx,cy+12),5)
