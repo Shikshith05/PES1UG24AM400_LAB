@@ -2,6 +2,7 @@ import pygame
 import random
 from game.ship import Ship
 from game.meteor import Meteor
+from game.laser import Laser
 
 WIDTH,HEIGHT=700,520
 FPS=60
@@ -21,6 +22,8 @@ class GameEngine:
     def reset(self):
         self.ship=Ship(WIDTH//2,HEIGHT-80)
         self.meteors=[]
+        self.lasers=[]
+        self.fire_cd=0
         self.timer=0
         self.spawn_interval=60
         self.score=0
@@ -33,13 +36,20 @@ class GameEngine:
             if event.type==pygame.KEYDOWN:
                 if event.key==pygame.K_SPACE:
                     if self.game_over: self.reset()
-                    else: self.started=True
+                    elif not self.started:
+                        self.started=True
+                        self.fire_cd=15  # don't fire on the same press that launches
         return True
 
     def update(self):
         if self.game_over or not self.started: return
         keys=pygame.key.get_pressed()
         self.ship.move(keys,WIDTH,HEIGHT)
+        # Task 1: laser firing (hold SPACE for auto-fire with cooldown)
+        if self.fire_cd>0: self.fire_cd-=1
+        if keys[pygame.K_SPACE] and self.fire_cd==0:
+            self.lasers.append(Laser(self.ship.rect.centerx,self.ship.rect.top))
+            self.fire_cd=12
         self.timer+=1
         if self.timer>=self.spawn_interval:
             self.meteors.append(Meteor(WIDTH))
@@ -49,13 +59,29 @@ class GameEngine:
             m.update()
             if m.collides(self.ship.rect):
                 self.game_over=True
+        self.update_lasers()
         self.meteors=[m for m in self.meteors if not m.off_screen(HEIGHT)]
         self.score+=1
+
+    def on_meteor_destroyed(self,m):
+        pass  # hook: Task 2 adds splitting here
+
+    def update_lasers(self):
+        for l in self.lasers: l.update()
+        for m in self.meteors[:]:
+            for l in self.lasers:
+                if l.hits(m):
+                    self.lasers.remove(l)
+                    self.meteors.remove(m)
+                    self.on_meteor_destroyed(m)
+                    break
+        self.lasers=[l for l in self.lasers if not l.off_screen()]
 
     def draw(self):
         self.screen.fill(BG)
         for sx,sy,sr in self.stars:
             pygame.draw.circle(self.screen,(200,200,220),(sx,sy),sr)
+        for l in self.lasers: l.draw(self.screen)
         for m in self.meteors: m.draw(self.screen)
         self.ship.draw(self.screen)
         sc=self.font.render(f"Time: {self.score//60}s",True,(200,200,240))
