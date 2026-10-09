@@ -62,9 +62,9 @@ class GameEngine:
         self.update_lasers()
         self.meteors=[m for m in self.meteors if not m.off_screen(HEIGHT)]
         self.score+=1
-
+        
     def on_meteor_destroyed(self,m):
-        pass  # hook: Task 2 adds splitting here
+        self.meteors.extend(m.split())
 
     def update_lasers(self):
         for l in self.lasers: l.update()
