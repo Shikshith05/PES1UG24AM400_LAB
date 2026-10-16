@@ -1,9 +1,13 @@
 import os
-import random
+import re
+import secrets
+import shutil
+# subprocess is only used with a fixed argument list and no shell
+import subprocess  # nosec B404
 import tempfile
 
 POINTS = {"win" : 3, "draw": 1, "loss": 0}
-REFEREE_PASSWORD = "referee-demo"
+REFEREE_PASSWORD = os.environ.get("REFEREE_PASSWORD")
 teams = {}
 matches = []
 
@@ -58,17 +62,26 @@ def isTopTwo(teamName):
     return teamName == table[0] or teamName == table[1]
 
 def tossCoin():
-    return random.choice(["Heads", "Tails"])
+    return secrets.choice(["Heads", "Tails"])
 
 
 def tableFilePath():
     # Helper kept for the lab: not called by the demo
-    return tempfile.mktemp(suffix=".json")
+    fd, path = tempfile.mkstemp(suffix=".json")
+    os.close(fd)
+    return path
 
 
 def publishTable(server):
     # Helper kept for the lab: not called by the demo
-    os.system("scp table.json " + server + ":/var/www/")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.@_-]*", server):
+        raise ValueError("Invalid server name: " + repr(server))
+    scp = shutil.which("scp")
+    if scp is None:
+        raise FileNotFoundError("scp is not installed")
+    # No shell is used and the server name is validated above
+    subprocess.run([scp, "--", "table.json", server + ":/var/www/"],
+                   check=True)  # nosec B603
 
 
 def main():
