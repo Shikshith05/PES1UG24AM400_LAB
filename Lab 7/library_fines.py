@@ -36,19 +36,16 @@ def shelf_code(title):
 
 def main():
     print("==== Running parse_member_id ====")
-    user_input = input("Enter a member ID (e.g. STU-1023): ")
-    result = parse_member_id(user_input)
-    print("Member Type and Number:", result)
+    result = parse_member_id(input("Enter a member ID (e.g. STU-1023): "))
+    print("Member Type and Number:", result if result is not None else "Invalid member ID")
 
     print("\n==== Running total_fine ====")
-    user_input = input("Enter days kept for each book as CSV (e.g. 10,20,30): ")
-    result = total_fine(user_input)
-    print("Total Fine:", result)
+    result = total_fine(input("Enter days kept for each book as CSV (e.g. 10,20,30): "))
+    print("Total Fine:", result if result is not None else "Invalid input")
 
     print("\n==== Running shelf_code ====")
-    user_input = input("Enter a book title with at least two words: ")
-    result = shelf_code(user_input)
-    print("Shelf Code:", result)
+    result = shelf_code(input("Enter a book title with at least two words: "))
+    print("Shelf Code:", result if result is not None else "Invalid title")
 
 if __name__ == "__main__":
     main()
