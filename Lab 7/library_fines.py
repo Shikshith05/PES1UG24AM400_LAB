@@ -1,5 +1,14 @@
 def parse_member_id(member_id):
-    member_type, number = member_id.split('-')
+    if not isinstance(member_id, str) or len(member_id) > 100:
+        return None
+    parts = member_id.strip().split('-')
+    if len(parts) != 2:
+        return None
+    member_type, number = parts[0].strip(), parts[1].strip()
+    if not (member_type.isascii() and member_type.isalpha()):
+        return None
+    if not (number.isascii() and number.isdigit()):
+        return None
     return member_type.upper(), int(number)
 
 def total_fine(days_csv):
