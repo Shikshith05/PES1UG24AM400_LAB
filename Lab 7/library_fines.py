@@ -27,7 +27,11 @@ def total_fine(days_csv):
     return fine
 
 def shelf_code(title):
+    if not isinstance(title, str):
+        return None
     words = title.split()
+    if len(words) < 2:
+        return None
     return (words[0][0] + words[1][0]).upper()
 
 def main():
