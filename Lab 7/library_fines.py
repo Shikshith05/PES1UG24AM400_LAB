@@ -12,9 +12,16 @@ def parse_member_id(member_id):
     return member_type.upper(), int(number)
 
 def total_fine(days_csv):
-    days = [int(d) for d in days_csv.split(',')]
+    if not isinstance(days_csv, str) or len(days_csv) > 10000:
+        return None
+    if days_csv.strip() == "":
+        return 0
     fine = 0
-    for d in days:
+    for item in days_csv.split(','):
+        item = item.strip()
+        if not (item.isascii() and item.isdigit()) or len(item) > 9:
+            return None
+        d = int(item)
         if d > 14:
             fine += (d - 14) * 2
     return fine
